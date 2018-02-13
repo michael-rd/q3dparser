@@ -23,4 +23,7 @@ foreach ($src_bytes as $k => $v) {
     if ($v != $decoded) {
         throw new Exception("fail at ${k} => ${v}, in fact ${decoded}\n");
     }
+    else {
+        echo "ok, read ${decoded}\n";
+    }
 }

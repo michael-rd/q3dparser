@@ -7,7 +7,7 @@ class BitStreamReader {
 
     private $bit_length;
 
-    private $offsetIndex;
+    //private $offsetIndex;
     // byte value of $data[$offsetIndex]
     private $offsetValue;
 
@@ -28,30 +28,24 @@ class BitStreamReader {
 
     public function reset () {
         $this->bitIdx = 0;
-        $this->offsetIndex = 1;
+//        $this->offsetIndex = 1;
+        $this->offsetValue = reset($this->data);
     }
 
     public function nextBit (): int {
         if ($this->bitIdx >= $this->bit_length)
             return -1;
 
-        $bitPos = $this->bitIdx & 31;
-
-        if ($bitPos == 0) {
-            //unpack byte
-            $this->offsetValue = $this->data[$this->offsetIndex];//ord($this->data[(int)($this->bitIdx / 8)]);
-            $this->offsetIndex++;
-        }
-
-        $this->bitIdx++;
         $rez = $this->offsetValue & 1;
-        $this->offsetValue >>= 1;
+        ++$this->bitIdx;
+
+        if ($this->bitIdx & 31)
+            $this->offsetValue >>= 1;
+        else
+            $this->offsetValue = next($this->data);
+
         return $rez;
     }
-
-
-//    private static $BYTE_BITS = array (0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01);
-//    private static $BYTE_BITS_REV = array (0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80);
 }
 
 
