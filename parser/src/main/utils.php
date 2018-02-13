@@ -5,11 +5,9 @@ class BitStreamReader {
     // string, gets from IO calls (fread)
     private $data;
 
-    // length in bytes
-    private $data_length;
-
     private $bit_length;
 
+    private $offsetIndex;
     // byte value of $data[$offsetIndex]
     private $offsetValue;
 
@@ -23,25 +21,26 @@ class BitStreamReader {
      */
     public function __construct($data)
     {
-        $this->data = $data;
-        $this->data_length = strlen($data);
-        $this->bit_length = $this->data_length * 8;
-        $this->bitIdx = 0;
+        $this->bit_length = strlen($data) * 8;
+        $this->data = unpack("I*",$data.str_repeat("\0", 4-(($this->bit_length/8)&0x03)));
+        $this->reset();
     }
 
     public function reset () {
         $this->bitIdx = 0;
+        $this->offsetIndex = 1;
     }
 
     public function nextBit (): int {
         if ($this->bitIdx >= $this->bit_length)
             return -1;
 
-        $bitPos = $this->bitIdx & 7;
+        $bitPos = $this->bitIdx & 31;
 
         if ($bitPos == 0) {
             //unpack byte
-            $this->offsetValue = $this->data[(int)($this->bitIdx / 8)];
+            $this->offsetValue = $this->data[$this->offsetIndex];//ord($this->data[(int)($this->bitIdx / 8)]);
+            $this->offsetIndex++;
         }
 
         $this->bitIdx++;

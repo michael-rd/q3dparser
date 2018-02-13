@@ -12,7 +12,7 @@ $reader = new BitStreamReader ($data);
 $prof_timer = new Sprof ("BSI");
 
 $count = 0;
-for ($i = 0; $i < 500; $i++) {
+for ($i = 0; $i < 100; $i++) {
 
     $prof_timer->begin();
 
