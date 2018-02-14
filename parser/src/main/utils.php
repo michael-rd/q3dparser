@@ -55,6 +55,14 @@ class BitStreamReader {
     }
 
     /**
+     * Test if end-of-data is reached
+     * @return bool return TRUE if end-of-data reached, else FALSE
+     */
+    public function isEOD () : bool {
+        return $this->bitIdx >= $this->bit_length;
+    }
+
+    /**
      * Read required amount of bits ($bits) from this stream.
      * Result will have all bits in right-to-left order (a normal bits order),
      * so the first read bit will be lowest
@@ -158,19 +166,19 @@ class BitStreamReader {
 
         return $this->bitIdx;
     }
-
-//    static $BIT_POS = array();
-//
-//    static function __init () {
-//        $set = 1;
-//        for ($i = 0; $i < 32; $i++) {
-//            self::$BIT_POS[$i] = $set;
-//            $set <<= 1;
-//        }
-//    }
 }
 
-//BitStreamReader::__init();
+
+class Q3Utils {
+    public static function ANGLE2SHORT (float $x) : int {
+        return ((int)($x*65536.0/360.0)) & 65535;
+    }
+
+    public static function SHORT2ANGLE (int $x) : float {
+        return ((float)$x*(360.0/65536.0));
+    }
+}
+
 
 /**
  * Helper class, simple profiler

@@ -6,7 +6,7 @@
  * Time: 4:42
  */
 
-define('Q3_HUFFMAN_NYT_SYM', 257);
+define('Q3_HUFFMAN_NYT_SYM', 0xFFFFFFFF);
 require_once 'utils.php';
 
 class Q3HuffmanReader {
@@ -21,20 +21,76 @@ class Q3HuffmanReader {
         $this->stream = new BitStreamReader($buffer);
     }
 
-    public function readByte () {
+    public function isEOD () : bool {
+        return $this->stream->isEOD();
+    }
+
+    public function readNumBits (int $bits) {
+        $value = 0;
+        $neg = $bits < 0;
+
+            if ($neg)
+                $bits = $bits*-1;
+
+            $fragmentBits = $bits & 7;
+
+            if ($fragmentBits != 0) {
+                $value = $this->stream.readBits($fragmentBits);
+                $bits -= $fragmentBits;
+            }
+
+            if ($bits > 0) {
+                $decoded = 0;
+                for ($i = 0; $i < $bits; $i+=8) {
+                    $sym = Q3HuffmanMapper::decodeSymbol($this->stream);
+                    if ($sym == Q3_HUFFMAN_NYT_SYM)
+                        return -1;
+
+                    $decoded |= ($sym << $i);
+                }
+
+                if ($fragmentBits > 0)
+                    $decoded <<= $fragmentBits;
+
+                $value |= $decoded;
+            }
+
+            if ($neg) {
+                if ( ($value & ( 1 << ( $bits - 1 ))) != 0 ) {
+                    $value |= -1 ^ ( ( 1 << $bits ) - 1 );
+                }
+            }
+
+            return $value;
+    }
+
+    public function readNumber ($bits) : int {
+        return $bits == 8 ? Q3HuffmanMapper::decodeSymbol($this->stream) : $this->readBits($bits);
+    }
+
+    public function readByte () : int {
         return Q3HuffmanMapper::decodeSymbol($this->stream);
     }
 
-    public function readBits (int $bits) {
-
+    public function readShort () : int {
+        return $this->readBits(16);
     }
 
-    public function readInt () {
-
+    public function readInt () : int {
+        return $this->readBits(32);
     }
 
-    public function readShort () {
+    public function readLong () : int {
+        return $this->readBits(32);
+    }
 
+//    public function readFloat () : float {
+//        $ival = $this->readBits(32);
+//        return Float.intBitsToFloat(ival);
+//    }
+
+    public function readAngle16 () : float {
+        return Q3Utils::SHORT2ANGLE(readShort());
     }
 }
 
@@ -44,7 +100,7 @@ class Q3HuffmanMapper {
 
     private static $rootNode;
 
-    public static function decodeSymbol (BitStreamReader $reader) {
+    public static function decodeSymbol (BitStreamReader $reader) : int {
         $node = self::$rootNode;
 
         while ($node != null && $node->symbol == Q3_HUFFMAN_NYT_SYM) {
@@ -55,7 +111,7 @@ class Q3HuffmanMapper {
             $node = $bit == 0 ? $node->left : $node->right;
         }
 
-        return $node == null || $node->symbol == Q3_HUFFMAN_NYT_SYM ? null : $node->symbol;
+        return $node == null ? Q3_HUFFMAN_NYT_SYM : $node->symbol;
     }
 
     static function __init () {
