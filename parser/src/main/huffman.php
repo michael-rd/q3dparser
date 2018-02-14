@@ -7,6 +7,7 @@
  */
 
 define('Q3_HUFFMAN_NYT_SYM', 0xFFFFFFFF);
+require_once 'const.php';
 require_once 'utils.php';
 
 class Q3HuffmanReader {
@@ -65,7 +66,7 @@ class Q3HuffmanReader {
     }
 
     public function readNumber ($bits) : int {
-        return $bits == 8 ? Q3HuffmanMapper::decodeSymbol($this->stream) : $this->readBits($bits);
+        return $bits == 8 ? Q3HuffmanMapper::decodeSymbol($this->stream) : $this->readNumBits($bits);
     }
 
     public function readByte () : int {
@@ -73,25 +74,60 @@ class Q3HuffmanReader {
     }
 
     public function readShort () : int {
-        return $this->readBits(16);
+        return $this->readNumBits(16);
     }
 
     public function readInt () : int {
-        return $this->readBits(32);
+        return $this->readNumBits(32);
     }
 
     public function readLong () : int {
-        return $this->readBits(32);
+        return $this->readNumBits(32);
     }
 
-//    public function readFloat () : float {
-//        $ival = $this->readBits(32);
-//        return Float.intBitsToFloat(ival);
-//    }
+    public function readFloat () : float {
+        return Q3Utils::rawBitsToFloat($this->readNumBits(32));
+    }
 
     public function readAngle16 () : float {
-        return Q3Utils::SHORT2ANGLE(readShort());
+        return Q3Utils::SHORT2ANGLE($this->readNumBits(16));
     }
+
+
+    public function readStringBase (int $limit, bool $stopAtNewLine) : string {
+        $arr = array();
+        for ($i = 0; $i < $limit; $i++) {
+            $byte = Q3HuffmanMapper::decodeSymbol($this->stream);
+
+            if ($byte <= 0)
+                break;
+
+            if ($stopAtNewLine && $byte == 0x0A)
+                break;
+
+            // translate all fmt spec to avoid crash bugs
+            // don't allow higher ascii values
+            if ($byte > 127 || $byte == Q3_PERCENT_CHAR_BYTE)
+                $byte = Q3_DOT_CHAR_BYTE;
+
+            $arr[] = $byte;
+        }
+
+        return call_user_func_array("pack", array_merge(array("C*"), $arr));
+    }
+
+    public function readString () : string {
+        return $this->readStringBase (Q3_MAX_STRING_CHARS, false);
+    }
+
+    public function readBigString () : string {
+        return $this->readStringBase (Q3_BIG_INFO_STRING, false);
+    }
+
+    public function readStringLine () : string {
+        return $this->readStringBase (Q3_MAX_STRING_CHARS, true);
+    }
+
 }
 
 

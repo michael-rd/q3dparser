@@ -54,7 +54,6 @@ class Q3DemoMessage {
         $this->sequence = $sequence;
         $this->size = $size;
     }
-
 }
 
 class Q3MessageStream {

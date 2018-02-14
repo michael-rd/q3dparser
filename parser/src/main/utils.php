@@ -48,7 +48,7 @@ class BitStreamReader {
     /**
      * Reset this stream. It sets read position to 0 (begin)
      */
-    public function reset () : void {
+    public function reset () {
         $this->bitIdx = 0;
 //        $this->offsetIndex = 1;
         $this->currentBits = reset($this->data);
@@ -176,6 +176,13 @@ class Q3Utils {
 
     public static function SHORT2ANGLE (int $x) : float {
         return ((float)$x*(360.0/65536.0));
+    }
+
+    public static function rawBitsToFloat (int $bits) : float {
+        $sign = $bits & 0x80000000 ? -1 : 1;
+        $e = ($bits >> 23) & 0xFF;
+        $m = $e ? ($bits & 0x7fffff) | 0x800000 : ($bits & 0x7fffff) << 1;
+        return $sign*$m*pow(2,$e-150);
     }
 }
 

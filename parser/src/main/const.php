@@ -9,6 +9,9 @@ define ('Q3_MESSAGE_MAX_SIZE', 0x4000);
 define ('Q3_MAX_STRING_CHARS', 1024);
 define ('Q3_BIG_INFO_STRING', 8192);
 define ('Q3_MAX_CONFIGSTRINGS', 1024);
+define ('Q3_PERCENT_CHAR_BYTE', 37);
+define ('Q3_DOT_CHAR_BYTE', 46);
+
 /*
 public static final int GENTITYNUM_BITS = 10;
     public static final int MAX_GENTITIES = 1<<GENTITYNUM_BITS;
