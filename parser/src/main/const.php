@@ -14,6 +14,12 @@ define ('Q3_DOT_CHAR_BYTE', 46);
 
 final class Q3Const {
     const MAX_CONFIGSTRINGS = 1024;
+
+
+
+    const Q3_DEMO_CFG_FIELD_CLIENT = 0;
+    const Q3_DEMO_CFG_FIELD_GAME = 1;
+    const Q3_DEMO_CFG_FIELD_PLAYER = 544;
 }
 
 /**

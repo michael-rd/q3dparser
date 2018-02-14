@@ -36,7 +36,7 @@ class Q3HuffmanReader {
             $fragmentBits = $bits & 7;
 
             if ($fragmentBits != 0) {
-                $value = $this->stream.readBits($fragmentBits);
+                $value = $this->stream->readBits($fragmentBits);
                 $bits -= $fragmentBits;
             }
 

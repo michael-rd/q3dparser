@@ -184,6 +184,18 @@ class Q3Utils {
         $m = $e ? ($bits & 0x7fffff) | 0x800000 : ($bits & 0x7fffff) << 1;
         return $sign*$m*pow(2,$e-150);
     }
+
+    public static function split_config($src) {
+        $begin_ind = substr ( $src, 0, 1 ) == '\\' ? 1 : 0;
+        $src = explode ( '\\', $src );
+        $rez = array ();
+
+        for($k = $begin_ind; $k < sizeof ( $src ); $k += 2) {
+            $rez [strtolower ( $src [$k] )] = $src [$k + 1];
+        }
+        return $rez;
+    }
+
 }
 
 

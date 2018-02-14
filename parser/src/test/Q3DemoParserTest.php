@@ -28,4 +28,11 @@ class Q3DemoParserTest extends TestCase {
 
         var_dump($raw_cfg);
     }
+
+    public function testParseConfigStrings002 () {
+        $cfg = Q3DemoParser::getFriendlyConfig("demos/lucy-vchrkn[df.vq3]00.44.048(MichaelRD.Russia).dm_68");
+        $this->assertNotNull ($cfg);
+
+        print_r($cfg);
+    }
 }

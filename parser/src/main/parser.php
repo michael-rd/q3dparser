@@ -58,6 +58,33 @@ class Q3DemoParser {
         return $p->parseConfig();
     }
 
+    public static function getFriendlyConfig (string $file_name) {
+        $conf = self::getRawConfigStrings($file_name);
+
+        if (!isset($conf))
+            return null;
+
+        $result = array();
+
+        if (isset($conf[Q3Const::Q3_DEMO_CFG_FIELD_CLIENT])) {
+            $result['client'] = Q3Utils::split_config($conf[Q3Const::Q3_DEMO_CFG_FIELD_CLIENT]);
+            $result['client_version'] = $result['client']['version'];
+            $result['physic'] = $result['client']['df_promode'] == 0 ? 'vq3' : 'cpm';
+        }
+
+        if (isset($conf[Q3Const::Q3_DEMO_CFG_FIELD_GAME])) {
+            $result['game'] = Q3Utils::split_config($conf[Q3Const::Q3_DEMO_CFG_FIELD_GAME]);
+        }
+
+        if (isset($conf[Q3Const::Q3_DEMO_CFG_FIELD_PLAYER])) {
+            $result['player'] = Q3Utils::split_config($conf[Q3Const::Q3_DEMO_CFG_FIELD_PLAYER]);
+        }
+
+        $result['raw'] = $conf;
+
+        return $result;
+    }
+
     public static function countDemoMessages (string $file_name) : int {
         $p = new Q3DemoParser($file_name);
         return $p->countMessages();

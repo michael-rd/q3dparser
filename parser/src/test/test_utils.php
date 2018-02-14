@@ -1,11 +1,6 @@
 <?php
 require_once("../main/utils.php");
 
-//var_dump(pack('f', 3.147));
-
-//var_dump(unpack('f', pack('i', 1059760811)));
-
-
 $data = str_repeat ('0123456789', 1000);
 
 $data_len = strlen($data);

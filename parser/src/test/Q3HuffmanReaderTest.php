@@ -45,4 +45,21 @@ class Q3HuffmanReaderTest extends TestCase
 
         $this->assertEquals ('Hello World!', $decompressor->readString());
     }
+
+    public function testDecode004 () {
+        $hex_str = '20EA3D9F013DED919F2B110000000000';
+        $decompressor = new Q3HuffmanReader (pack("H*", $hex_str));
+
+        $this->assertEquals (3.14, $decompressor->readFloat(), '', 0.001);
+        $this->assertEquals (89.20170609, $decompressor->readFloat(), '', 0.000006001);
+    }
+
+    public function testDecode005 () {
+        $hex_str = '33C0C5518B0600000000000000000000';
+        $decompressor = new Q3HuffmanReader (pack("H*", $hex_str));
+
+        $this->assertEquals (3251, $decompressor->readNumBits(12));
+        $this->assertEquals (823, $decompressor->readNumBits(10));
+        $this->assertEquals (21972, $decompressor->readNumBits(15));
+    }
 }
