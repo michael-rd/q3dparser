@@ -1,53 +1,176 @@
 <?php
 
+/**
+ * Class BitStreamReader
+ *
+ * It helps to operate on byte-buffers.
+ * All operations are organized to expose byte-buffer as stream of bits.
+ * Constructor usually takes binary string after fread (file read) operation call.
+ * There is no other logic except consequential reading of bits
+ */
 class BitStreamReader {
 
-    // string, gets from IO calls (fread)
+    // array of integers, first value have index '1'
+    // this var holds result of unpack operation
     private $data;
 
+    // the number of bits in this stream
     private $bit_length;
 
-    //private $offsetIndex;
-    // byte value of $data[$offsetIndex]
-    private $offsetValue;
+    // cached value of integer taken from $data
+    private $currentBits;
 
-    // index of bit in a virtual bit-stream, it'a a sequential number of reads from this stream
+    // index of bit (read position) in a virtual bit-stream
+    // it'a a sequential number of reads from this stream
     private $bitIdx;
 
 
     /**
      * BitStreamReader constructor.
-     * @param $data
+     * @param $data assumes it's a binary string taken from 'fread' call or array of integers
      */
     public function __construct($data)
     {
-        $this->bit_length = strlen($data) * 8;
-        $this->data = unpack("I*",$data.str_repeat("\0", 4-(($this->bit_length/8)&0x03)));
+        if (is_string($data)) {
+            $this->bit_length = strlen($data) * 8;
+            // unpack binary string into array of integers
+            //
+            $this->data = unpack("I*",$data.str_repeat("\0", 4-(($this->bit_length/8)&0x03)));
+        }
+        else if (is_array($data)) {
+            $this->bit_length = count($data) * 32;
+            $this->data = $data;
+        }
+
         $this->reset();
     }
 
-    public function reset () {
+    /**
+     * Reset this stream. It sets read position to 0 (begin)
+     */
+    public function reset () : void {
         $this->bitIdx = 0;
 //        $this->offsetIndex = 1;
-        $this->offsetValue = reset($this->data);
+        $this->currentBits = reset($this->data);
     }
 
+    /**
+     * Read required amount of bits ($bits) from this stream.
+     * Result will have all bits in right-to-left order (a normal bits order),
+     * so the first read bit will be lowest
+     * @param int $bits amount of bits to read. value has to be in a range 1..32
+     * @return int
+     */
+    public function readBits (int $bits) : int {
+        if ($bits < 0 || $bits > 32 || $this->bitIdx + $bits > $this->bit_length)
+            return -1;
+
+        $value = 0;
+        // bit mask to set for target value
+        $setBit = 1;
+
+        // cache read position, local variables access is much faster
+        $intIdx = $this->bitIdx;
+        // cache curr bits
+        $intBits = $this->currentBits;
+
+
+        // amount of bits we can read from current cached value
+        $currAmount = 32 - ($intIdx & 31);
+        $tread = $bits > $currAmount ? $currAmount : $bits;
+
+//        echo "bits to read=${bits}, curr-amount = ${currAmount}, tread = ${tread}, bits-cache: ".decbin($intBits);
+
+        $bits -= $tread;
+        $intIdx += $tread;
+
+        while ($tread > 0) {
+            if ($intBits & 1)
+                $value |= $setBit;
+
+            $setBit <<= 1;
+            $intBits >>= 1;
+            --$tread;
+        }
+
+        if ($bits > 0) {
+            // we have to switch to next int from data-buffer
+            $intBits = next($this->data);
+            $intIdx += $bits;
+
+            while ($bits > 0) {
+                if ($intBits & 1)
+                    $value |= $setBit;
+
+                $setBit <<= 1;
+                $intBits >>= 1;
+                --$bits;
+            }
+        }
+
+        // write local values back
+        $this->currentBits = $intBits;
+        $this->bitIdx = $intIdx;
+//        echo ", in end read-pos= ${intIdx} \n";
+
+        return $value;
+    }
+
+    /**
+     * Method read and return next bit value from this stream
+     * @return int returns next bit value (0 or 1) or -1 in case end of data
+     */
     public function nextBit (): int {
         if ($this->bitIdx >= $this->bit_length)
             return -1;
 
-        $rez = $this->offsetValue & 1;
+        $rez = $this->currentBits & 1;
         ++$this->bitIdx;
 
         if ($this->bitIdx & 31)
-            $this->offsetValue >>= 1;
+            $this->currentBits >>= 1;
         else
-            $this->offsetValue = next($this->data);
+            $this->currentBits = next($this->data);
 
         return $rez;
     }
+
+    /**
+     * It skips amount of bits
+     * @param int $skip value has to be in range 1..32
+     * @return int returns current bit-read position of this stream
+     */
+    public function skipBits (int $skip) : int {
+        if ($skip < 0 || $skip > 32 || $this->bitIdx + $skip > $this->bit_length)
+            return -1;
+
+        $currAmount = 32 - ($this->bitIdx & 31);
+        $this->bitIdx += $skip;
+
+        if ($currAmount > $skip) {
+            $this->currentBits >>= $skip;
+        }
+        else {
+            $this->currentBits = next($this->data);
+            $skip -= $currAmount;
+            $this->currentBits >>= $skip;
+        }
+
+        return $this->bitIdx;
+    }
+
+//    static $BIT_POS = array();
+//
+//    static function __init () {
+//        $set = 1;
+//        for ($i = 0; $i < 32; $i++) {
+//            self::$BIT_POS[$i] = $set;
+//            $set <<= 1;
+//        }
+//    }
 }
 
+//BitStreamReader::__init();
 
 /**
  * Helper class, simple profiler

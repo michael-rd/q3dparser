@@ -24,6 +24,18 @@ class Q3HuffmanReader {
     public function readByte () {
         return Q3HuffmanMapper::decodeSymbol($this->stream);
     }
+
+    public function readBits (int $bits) {
+
+    }
+
+    public function readInt () {
+
+    }
+
+    public function readShort () {
+
+    }
 }
 
 
