@@ -7,6 +7,7 @@
  */
 
 require_once ('const.php');
+require_once ('huffman.php');
 
 class Q3DemoParser {
 
@@ -20,24 +21,49 @@ class Q3DemoParser {
         $this->file_name = $file_name;
     }
 
+
+    public function parseConfig () {
+        $msgParser = new Q3DemoConfigParser ();
+        $this->doParse($msgParser);
+        return $msgParser->hasConfigs() ? $msgParser->getRawConfigs() : NULL;
+    }
+
     /**
      *
      * @throws Exception
      * @return int messages count in this demo-file
      */
     public function countMessages () : int {
+        return $this->doParse (new Q3EmptyParser())->count;
+    }
+
+    private function doParse (AbstractDemoMessageParser $msgParser) : AbstractDemoMessageParser {
         $messageStream = new Q3MessageStream($this->file_name);
         try {
-            while ($messageStream->nextMessage() != NULL) {
+            $msg = NULL;
+            while (($msg = $messageStream->nextMessage()) != NULL) {
+                if (!$msgParser->parse($msg))
+                    break;
             }
-
-            return $messageStream->getReadMessages();
         }
         finally{
             $messageStream->close();
         }
+
+        return $msgParser;
+    }
+
+    public static function getRawConfigStrings (string $file_name) {
+        $p = new Q3DemoParser($file_name);
+        return $p->parseConfig();
+    }
+
+    public static function countDemoMessages (string $file_name) : int {
+        $p = new Q3DemoParser($file_name);
+        return $p->countMessages();
     }
 }
+
 
 class Q3DemoMessage {
     public $sequence;
@@ -136,5 +162,106 @@ class Q3MessageStream {
     public function __destruct() {
         $this->close();
     }
-
 }
+
+interface AbstractDemoMessageParser {
+    public function parse(Q3DemoMessage $message) : bool;
+}
+
+
+final class Q3EmptyParser implements AbstractDemoMessageParser {
+    public $count = 0;
+
+    public function parse(Q3DemoMessage $message) : bool {
+        ++$this->count;
+        return true;
+    }
+}
+
+final class Q3DemoConfigParser implements AbstractDemoMessageParser {
+
+    private $configs;
+
+    public function hasConfigs () : bool {
+        return isset($this->configs);
+    }
+
+    public function getRawConfigs () {
+        return $this->configs;
+    }
+
+    public function parse(Q3DemoMessage $message) : bool {
+        $reader = new Q3HuffmanReader ($message->data);
+
+        //clc.reliableAcknowledge
+        $reader->readLong();
+
+        while (!$reader->isEOD()) {
+            switch ($reader->readByte()) {
+                case Q3_SVC::BAD:
+                case Q3_SVC::NOP:
+                    return false;
+
+                case Q3_SVC::EOF:
+                    return isset($this->configs);
+
+                case Q3_SVC::SERVERCOMMAND:
+                    $reader->readServerCommand();
+                    break;
+
+                case Q3_SVC::GAMESTATE:
+                    $this->parseGameState($reader);
+                    return isset($this->configs);
+
+                case Q3_SVC::SNAPSHOT:
+                    // snapshots couldn't be mixed with game-state command in a single message
+                    return false;
+
+                default:
+                    // unknown command / corrupted stream
+                    return false;
+            }
+        }
+    }
+
+    private function parseGameState (Q3HuffmanReader $reader) {
+        //clc.serverCommandSequence
+        $reader->readLong();
+
+        while (true) {
+            $cmd = $reader->readByte();
+            if ($cmd == Q3_SVC::EOF)
+                break;
+
+            switch ($cmd) {
+                case Q3_SVC::CONFIGSTRING:
+                    $key = $reader->readShort();
+                    if ($key < 0 || $key > Q3Const::MAX_CONFIGSTRINGS) {
+                        //logger.debug("wrong config string key {}", key);
+                        return;
+                    }
+                    if (!isset($this->configs))
+                        $this->configs = array();
+
+                    $this->configs[$key] = $reader->readBigString();
+                    break;
+
+                case Q3_SVC::BASELINE:
+                    // assume Baseline command has to follow after config-strings
+                    return;
+
+                default:
+                    //  bad command
+                    return;
+            }
+        }
+
+        //clc.clientNum
+        $reader->readLong();
+
+        //clc.checksumFeed
+        $reader->readLong();
+    }
+}
+
+

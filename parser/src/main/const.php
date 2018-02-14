@@ -12,6 +12,25 @@ define ('Q3_MAX_CONFIGSTRINGS', 1024);
 define ('Q3_PERCENT_CHAR_BYTE', 37);
 define ('Q3_DOT_CHAR_BYTE', 46);
 
+final class Q3Const {
+    const MAX_CONFIGSTRINGS = 1024;
+}
+
+/**
+ * Q3 server commands
+ */
+final class Q3_SVC {
+    const BAD = 0;  // not used in demos
+    const NOP = 1;  // not used in demos
+    const GAMESTATE = 2;
+    const CONFIGSTRING = 3; // only inside gamestate
+    const BASELINE = 4;     // only inside gamestate
+    const SERVERCOMMAND = 5;
+    const DOWNLOAD = 6; // not used in demos
+    const SNAPSHOT = 7;
+    const EOF = 8;
+}
+
 /*
 public static final int GENTITYNUM_BITS = 10;
     public static final int MAX_GENTITIES = 1<<GENTITYNUM_BITS;

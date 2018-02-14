@@ -128,6 +128,13 @@ class Q3HuffmanReader {
         return $this->readStringBase (Q3_MAX_STRING_CHARS, true);
     }
 
+    public function readServerCommand () {
+        return array(
+                'sequence' => $this->readLong(),
+                'command' => $this->readString()
+            );
+    }
+
 }
 
 
