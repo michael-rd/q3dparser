@@ -189,9 +189,9 @@ class Q3Utils {
         $begin_ind = substr ( $src, 0, 1 ) == '\\' ? 1 : 0;
         $src = explode ( '\\', $src );
         $rez = array ();
-
-        for($k = $begin_ind; $k < sizeof ( $src ); $k += 2) {
-            $rez [strtolower ( $src [$k] )] = $src [$k + 1];
+        $src_size = sizeof($src);
+        for($k = $begin_ind; $k < $src_size; $k += 2) {
+            $rez [strtolower ($src [$k])] = $src [$k + 1];
         }
         return $rez;
     }
